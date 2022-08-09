@@ -5,11 +5,26 @@ const vis = require("vis-timeline");
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
 
+class TimelineData {
+  id: string;
+  content: string;
+  start: string;
+  className: string;
+
+  constructor(id: string, content: string, start: string, className: string) {
+    this.id = id;
+    this.content = content;
+    this.start = start;
+    this.className = className;
+  }
+}
+
 export class timelinecontrol
   implements ComponentFramework.StandardControl<IInputs, IOutputs>
 {
   private _timelineElm: HTMLDivElement;
   private _timelineVis: any;
+  private _timelineData: TimelineData[] = [];
 
   /**
    * Empty constructor.
@@ -41,18 +56,59 @@ export class timelinecontrol
    */
   private renderTimeline(): void {
     // Create a DataSet (allows two way data-binding)
-    var items = [
-      { id: 1, content: "item 1", start: "2020-08-20" },
-      { id: 2, content: "item 2", start: "2020-08-14" },
-      { id: 3, content: "item 3", start: "2020-08-18" },
-      { id: 4, content: "item 4", start: "2020-08-16", end: "2020-08-19" },
-      { id: 5, content: "item 5", start: "2020-08-25" },
-      { id: 6, content: "item 6", start: "2020-08-27", type: "point" },
-    ];
+    // var items = [
+    //   { id: 1, content: "item 1", start: "2020-08-20" },
+    //   { id: 2, content: "item 2", start: "2020-08-14" },
+    //   { id: 3, content: "item 3", start: "2020-08-18" },
+    //   { id: 4, content: "item 4", start: "2020-08-16", end: "2020-08-19" },
+    //   { id: 5, content: "item 5", start: "2020-08-25" },
+    //   { id: 6, content: "item 6", start: "2020-08-27", type: "point" },
+    // ];
+    var items = this._timelineData;
     // Configuration for the Timeline
     var options = {};
     // Create a Timeline
     var timeline = new vis.Timeline(this._timelineElm, items, options);
+  }
+
+  /**
+   *
+   * @param gridParam
+   */
+  private createTimelineData(gridParam: DataSet) {
+    this._timelineData = [];
+    if (gridParam.sortedRecordIds.length > 0) {
+      for (let currentRecordId of gridParam.sortedRecordIds) {
+        console.log(
+          "record: " + gridParam.records[currentRecordId].getRecordId()
+        );
+
+        var permitName =
+          gridParam.records[currentRecordId].getFormattedValue("contoso_name");
+        var permitDate = gridParam.records[currentRecordId].getFormattedValue(
+          "contoso_scheduleddate"
+        );
+        var permitStatus =
+          gridParam.records[currentRecordId].getFormattedValue("statuscode");
+        var permitColor = "green";
+        if (permitStatus == "Failed") permitColor = "red";
+        else if (permitStatus == "Canceled") permitColor = "yellow";
+
+        console.log("name:" + permitName + " date:" + permitDate);
+
+        if (permitName != null)
+          this._timelineData.push(
+            new TimelineData(
+              currentRecordId,
+              permitName,
+              permitDate,
+              permitColor
+            )
+          );
+      }
+    } else {
+      //handle no data
+    }
   }
 
   /**
@@ -61,7 +117,11 @@ export class timelinecontrol
    */
   public updateView(context: ComponentFramework.Context<IInputs>): void {
     // Add code to update control view
-    this.renderTimeline();
+    if (!context.parameters.timelineDataSet.loading) {
+      // Get sorted columns on View
+      this.createTimelineData(context.parameters.timelineDataSet);
+      this.renderTimeline();
+    }
   }
 
   /**
