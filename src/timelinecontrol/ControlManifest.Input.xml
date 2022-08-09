@@ -27,6 +27,7 @@
     <resources>
       <code path="index.ts" order="1"/>
       <css path="css/timelinecontrol.css" order="1" />
+      <css path="..\node_modules\vis-timeline\dist\vis-timeline-graph2d.min.css" order="1" />
       <!-- UNCOMMENT TO ADD MORE RESOURCES
       
       <resx path="strings/timelinecontrol.1033.resx" version="1.0.0" />
